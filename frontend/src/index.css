@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+
+:root {
+  --primary: #FF0055;
+  --secondary: #00D2FF;
+  --accent: #FFD700;
+  --dark: #0f0f1a;
+  --light: #f0f0f5;
+  --glass: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
+}
+
+body {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--dark);
+  color: var(--light);
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(255, 0, 85, 0.2) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, rgba(0, 210, 255, 0.2) 0%, transparent 20%);
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.anime-btn {
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  border: none;
+  padding: 12px 32px;
+  color: white;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.anime-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
+}
+
+.anime-card {
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 2rem;
+  transition: transform 0.3s ease;
+}
+
+.anime-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--secondary);
+  box-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+}
+
+.title-text {
+  font-size: 4rem;
+  font-weight: 800;
+  background: linear-gradient(to right, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-transform: uppercase;
+  text-shadow: 0 0 30px rgba(255, 0, 85, 0.3);
+  margin-bottom: 1rem;
+}
+
+.fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

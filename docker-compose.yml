@@ -1,0 +1,78 @@
+services:
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+    volumes:
+      - minio_data:/data
+
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      MINIO_ENDPOINT: minio:9000
+    depends_on:
+      - minio
+
+  # namenode:
+  #   image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+  #   container_name: namenode
+  #   restart: always
+  #   ports:
+  #     - 9870:9870
+  #     - 9010:9000
+  #   volumes:
+  #     - hadoop_namenode:/hadoop/dfs/name
+  #   environment:
+  #     - CLUSTER_NAME=test
+  #     - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+  #   env_file:
+  #     - ./hadoop/hadoop.env
+
+  # datanode:
+  #   image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+  #   container_name: datanode
+  #   restart: always
+  #   volumes:
+  #     - hadoop_datanode:/hadoop/dfs/data
+  #   environment:
+  #     SERVICE_PRECONDITION: "namenode:9870"
+  #     CORE_CONF_fs_defaultFS: hdfs://namenode:9000
+  #   ports:
+  #     - "9864:9864"
+  #   env_file:
+  #     - ./hadoop/hadoop.env
+
+  spark-master:
+    build: ./sparkApache
+    container_name: spark-master
+    hostname: spark-master
+    ports:
+      - "8080:8080" # Master Web UI
+      - "7077:7077" # Master port
+    # bound scripts file
+    volumes:
+      - ./sparkApache/scripts:/app
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+
+  spark-worker:
+    build: ./sparkApache
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=4
+      - SPARK_WORKER_MEMORY=4g
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+
+volumes:
+  minio_data:
+    # hadoop_namenode:
+    # hadoop_datanode:
