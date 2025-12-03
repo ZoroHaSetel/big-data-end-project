@@ -51,3 +51,7 @@ Task :
 
 
 
+Prepartion 
+curl -X POST http://localhost:5000/ingest-fake  -H 'Content-Type: application/json'  -d '{"date":"2025/11/28","count":200}'
+
+docker exec spark-master python3 /app/pysparkminioi.py
