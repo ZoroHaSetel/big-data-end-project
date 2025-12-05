@@ -1,6 +1,30 @@
 import { useState, useEffect, useRef } from 'react';
 
 const useMouseTracking = (username, currentPage) => {
+    // Resolve backend URL dynamically:
+    // 1) Use Vite env var `VITE_API_URL` when provided (recommended)
+    // 2) Fallback to `window.location.origin` so the frontend will call the same origin
+    // 3) Final fallback to localhost:5000 for local dev
+    const resolveBackendUrl = () => {
+        try {
+            // Access via window.__VITE_ENV__ or directly from import.meta.env
+            const envUrl = import.meta.env.VITE_API_URL;
+            if (envUrl) return envUrl.replace(/\/+$/, '');
+        } catch (e) {
+            console.warn('[useMouseTracking] Error accessing import.meta.env:', e);
+            // import.meta may not exist in some environments during static analysis — ignore
+        }
+
+        if (typeof window !== 'undefined' && window.location) {
+            const fallback = window.location.origin.replace(/\/+$/, '');
+            return fallback;
+        }
+
+        return 'http://localhost:5000';
+    };
+
+    const BACKEND_URL = resolveBackendUrl();
+
     const [events, setEvents] = useState([]);
     const mousePos = useRef({ x: 0, y: 0 });
     const eventsRef = useRef([]); // Ref to keep track of events without dependency issues
@@ -83,22 +107,24 @@ const useMouseTracking = (username, currentPage) => {
             setEvents([]);
 
             try {
-                console.log('Flushing mouse events:', payload.length);
-                await fetch('http://localhost:5000/collect', {
+                // Use /api/collect which proxies to backend in dev, or construct full URL in prod
+                const url = `${BACKEND_URL}/collect`
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(payload),
                 });
+                console.log('[useMouseTracking] Fetch response status:', response);
             } catch (error) {
-                console.error('Failed to send mouse events:', error);
+                console.error('[useMouseTracking] Failed to send mouse events:', error);
                 // Optional: Put events back if failed? For now, we drop them to avoid memory leaks.
             }
-        }, 30000);
+        }, 5000);
 
         return () => clearInterval(flushInterval);
-    }, [isVisible]);
+    }, [isVisible, BACKEND_URL]);
 
     return {};
 };

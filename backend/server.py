@@ -8,8 +8,16 @@ from minio.error import S3Error
 from datetime import datetime, timedelta
 import random
 
+
 app = Flask(__name__)
-CORS(app)
+# Configure CORS explicitly. Allow origins via `CORS_ORIGINS` env var (defaults to '*').
+# This ensures the Access-Control-Allow-* headers are present on preflight responses.
+# support_credentials=False allows requests without Origin header (e.g., from GitHub.dev tunnel)
+# cors_origins = os.getenv("CORS_ORIGINS", "*")
+# CORS(app, resources={r"/*": {"origins": cors_origins}},
+#      methods=["GET", "POST", "OPTIONS"],
+#      allow_headers=["Content-Type", "Authorization"],
+#      support_credentials=False)
 
 client = Minio(
     endpoint=os.getenv("MINIO_ENDPOINT", "localhost:9000"),
@@ -97,3 +105,14 @@ def ingest_fake():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
+
+# Ensure CORS headers are present even on requests without Origin header (GitHub.dev tunnel)
+# @app.after_request
+# def _add_cors_headers(response):
+#     origin = request.headers.get('Origin', '*')
+#     response.headers.setdefault('Access-Control-Allow-Origin', origin)
+#     response.headers.setdefault('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+#     response.headers.setdefault('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+#     response.headers.setdefault('Access-Control-Allow-Credentials', 'false')
+#     return response

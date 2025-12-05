@@ -2,13 +2,13 @@ setup :
 	docker compose up -d
 	cd frontend && npm i
 
-run :
+be.start :
 	docker compose up -d
-stop :
+be.stop :
 	docker compose down
 
-frontend :
-	cd frontend && npm start
+fe.dev :
+	cd frontend && npm run dev
 
 fake-ingest :
 	curl -X POST http://localhost:5000/ingest-fake \
