@@ -7,8 +7,8 @@ run :
 stop :
 	docker compose down
 
-frontend :
-	cd frontend && npm start
+fe :
+	cd frontend && npm run dev
 
 fake-ingest :
 	curl -X POST http://localhost:5000/ingest-fake \
@@ -16,3 +16,6 @@ fake-ingest :
 	  -d '{"date":"2025/11/28","count":200}'
 spark-process :
 	docker exec spark-master python3 /app/pysparkminioi.py
+
+spark-report :
+	docker exec spark-master python3 /app/heatmap_report.py
