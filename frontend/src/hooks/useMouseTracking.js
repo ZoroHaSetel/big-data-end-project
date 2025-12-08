@@ -1,6 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 
 const useMouseTracking = (username, currentPage) => {
+    const resolveBackendUrl = () => {
+        try {
+            const envUrl = import.meta?.env?.VITE_API_URL;
+            console.log('import.meta:', import.meta);
+            console.log('Resolved BACKEND_URL from VITE_API_URL:', envUrl);
+            if (envUrl) return envUrl.replace(/\/+$/, '');
+        } catch (e) {
+            // import.meta may not exist in some environments during static analysis — ignore
+        }
+
+        return 'http://localhost:5000';
+    };
+
+    const BACKEND_URL = resolveBackendUrl();
+
     const [events, setEvents] = useState([]);
     const mousePos = useRef({ x: 0, y: 0 });
     const eventsRef = useRef([]); // Ref to keep track of events without dependency issues
@@ -83,8 +98,7 @@ const useMouseTracking = (username, currentPage) => {
             setEvents([]);
 
             try {
-                console.log('Flushing mouse events:', payload.length);
-                await fetch('http://localhost:5000/collect', {
+                await fetch(`${BACKEND_URL}/collect`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -98,7 +112,7 @@ const useMouseTracking = (username, currentPage) => {
         }, 30000);
 
         return () => clearInterval(flushInterval);
-    }, [isVisible]);
+    }, [isVisible, BACKEND_URL]);
 
     return {};
 };
