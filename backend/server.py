@@ -69,20 +69,19 @@ def ingest_fake():
     start_ts = int(dt.replace(hour=0, minute=0, second=0).timestamp())
     end_ts = start_ts + 86400 - 1
 
-    actions = ["mouse click", "mouse idle", "mousemove"]
-    pages = ["/", "/login", "/selection", "/confirm"]
+    actions = ["mouse click", "mouse idle", "mouse move"]
+    pages = ["landing", "login", "selection", "confirmation"]
     user = ["ash", "unknown", "guest", "admin"]
 
     events = []
     for i in range(count):
         ev = {
-            "username": f"user{random.randint(1,20)}",
+            "username": random.choice(user),
             "action": random.choice(actions),
             "page": random.choice(pages),
             "timestamp": random.randint(start_ts * 1000, end_ts * 1000),
             "x": random.randint(0, 1920),
             "y": random.randint(0, 1080),
-            "username": random.choice(user),
         }
         events.append(ev)
 

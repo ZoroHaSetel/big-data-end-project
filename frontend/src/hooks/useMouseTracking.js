@@ -5,7 +5,7 @@ const useMouseTracking = (username, currentPage) => {
     try {
       const envUrl = import.meta?.env?.VITE_API_URL;
       if (envUrl) return envUrl.replace(/\/+$/, "");
-    } catch (e) {
+    } catch {
       // import.meta may not exist in some environments during static analysis — ignore
     }
 
@@ -17,6 +17,7 @@ const useMouseTracking = (username, currentPage) => {
   const [events, setEvents] = useState([]);
   const mousePos = useRef({ x: 0, y: 0 });
   const eventsRef = useRef([]); // Ref to keep track of events without dependency issues
+  const lastMoveEventTime = useRef(0); // Track last mousemove event timestamp for throttling
 
   // Update ref whenever state changes
   useEffect(() => {
@@ -40,16 +41,35 @@ const useMouseTracking = (username, currentPage) => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
-  // Track mouse position
+  // Track mouse position with throttled mousemove events
   useEffect(() => {
+    const THROTTLE_MS = 500; // Sample mousemove events every 500ms
+
     const handleMouseMove = (e) => {
       if (!isVisible) return;
+
+      const now = Date.now();
       mousePos.current = { x: e.clientX, y: e.clientY };
+
+      // Throttle: only send mousemove event if enough time has passed
+      if (now - lastMoveEventTime.current >= THROTTLE_MS) {
+        lastMoveEventTime.current = now;
+
+        const newEvent = {
+          username: username || "unknown",
+          action: "mouse move",
+          page: currentPage,
+          timestamp: now,
+          x: e.clientX,
+          y: e.clientY,
+        };
+        setEvents((prev) => [...prev, newEvent]);
+      }
     };
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [isVisible]);
+  }, [username, currentPage, isVisible]);
 
   // Track clicks
   useEffect(() => {
@@ -99,16 +119,18 @@ const useMouseTracking = (username, currentPage) => {
       setEvents([]);
 
       try {
-        await fetch(`${BACKEND_URL}/collect`, {
+        const response = await fetch(`${BACKEND_URL}/collect`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
         });
+        if (!response.ok) throw new Error("Failed to send");
       } catch (error) {
         console.error("Failed to send mouse events:", error);
         // Optional: Put events back if failed? For now, we drop them to avoid memory leaks.
+        setEvents(payload);
       }
     }, 30000);
 
