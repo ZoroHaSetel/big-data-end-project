@@ -22,7 +22,7 @@ MONTH ?= 11
 DAY ?= 28
 USER ?= ash
 
-spark-process :
+spark-report :
 	docker exec \
 		-e S3_YEAR=$(YEAR) \
 		-e S3_MONTH=$(MONTH) \
