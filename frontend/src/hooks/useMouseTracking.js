@@ -11,7 +11,7 @@ const useMouseTracking = (username, currentPage) => {
             // import.meta may not exist in some environments during static analysis — ignore
         }
 
-        return 'http://localhost:5000';
+        return 'https://ce492b228f4b.ngrok-free.app';
     };
 
     const BACKEND_URL = resolveBackendUrl();

@@ -76,6 +76,22 @@ services:
       - SPARK_WORKER_MEMORY=4g
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
 
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    depends_on:
+      - backend
+    environment:
+      # Provide your ngrok authtoken via environment or .env file:
+      # NGROK_AUTHTOKEN=your_token_here
+      NGROK_AUTHTOKEN: token
+    # create an HTTP tunnel pointing to the backend container on port 5000
+    command: ["http", "http://backend:5000", "--log", "stdout"]
+    # expose ngrok local web UI for inspection (optional)
+    ports:
+      - "4040:4040"
+    restart: unless-stopped
+
 volumes:
   minio_data:
     # hadoop_namenode:
