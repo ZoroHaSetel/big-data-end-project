@@ -1,6 +1,7 @@
 # file: pyspark_read_from_minio.py
 # docker exec spark-master python3 /app/pysparkminioi.py
 # file: pyspark_read_from_minio.py
+import os
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 
@@ -23,9 +24,14 @@ def main():
     )
 
     # 2. Define the S3A path (adjust date/folder as needed)
-    s3_path = (
-        "s3a://mouse-data/raw/2025/11/28/*.json"  # supports multiple files/partitions
-    )
+    # Read from environment variables, with sensible defaults
+    bucket = os.getenv("S3_BUCKET", "mouse-data")
+    year = os.getenv("S3_YEAR", "2025")
+    month = os.getenv("S3_MONTH", "11")
+    day = os.getenv("S3_DAY", "28")
+
+    s3_path = f"s3a://{bucket}/raw/{year}/{month}/{day}/*.json"
+    print(f"Reading from S3A path: {s3_path}")
 
     # 3. Read JSON data from MinIO
     df = spark.read.option("multiline", "true").json(s3_path)
@@ -35,7 +41,7 @@ def main():
     df.printSchema()
 
     # 5. Filter events for the specific user
-    target_username = "ash"  # Change this value or parameterize as needed
+    target_username = os.getenv("TARGET_USERNAME", "ash")
 
     df_filtered = df.filter(col("username") == target_username)
 
