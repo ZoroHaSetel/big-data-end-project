@@ -23,7 +23,13 @@ def main():
     )
 
     # 2. Define the S3A path
-    s3_path = "s3a://mouse-data/raw/2025/11/28/*.json"
+    # Read from environment variables, with sensible defaults
+    bucket = os.getenv("S3_BUCKET", "mouse-data")
+    year = os.getenv("S3_YEAR", "2025")
+    month = os.getenv("S3_MONTH", "11")
+    day = os.getenv("S3_DAY", "28")
+    
+    s3_path = f"s3a://{bucket}/raw/{year}/{month}/{day}/*.json"
 
     # 3. Read JSON data
     try:

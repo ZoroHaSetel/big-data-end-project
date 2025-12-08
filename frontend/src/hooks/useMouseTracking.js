@@ -1,120 +1,121 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 
 const useMouseTracking = (username, currentPage) => {
-    const resolveBackendUrl = () => {
-        try {
-            const envUrl = import.meta?.env?.VITE_API_URL;
-            console.log('import.meta:', import.meta);
-            console.log('Resolved BACKEND_URL from VITE_API_URL:', envUrl);
-            if (envUrl) return envUrl.replace(/\/+$/, '');
-        } catch (e) {
-            // import.meta may not exist in some environments during static analysis — ignore
-        }
+  const resolveBackendUrl = () => {
+    try {
+      const envUrl = import.meta?.env?.VITE_API_URL;
+      if (envUrl) return envUrl.replace(/\/+$/, "");
+    } catch (e) {
+      // import.meta may not exist in some environments during static analysis — ignore
+    }
 
-        return 'https://ce492b228f4b.ngrok-free.app';
+    return "http://localhost:5000";
+  };
+
+  const BACKEND_URL = resolveBackendUrl();
+
+  const [events, setEvents] = useState([]);
+  const mousePos = useRef({ x: 0, y: 0 });
+  const eventsRef = useRef([]); // Ref to keep track of events without dependency issues
+
+  // Update ref whenever state changes
+  useEffect(() => {
+    eventsRef.current = events;
+  }, [events]);
+
+  const [isVisible, setIsVisible] = useState(
+    document.visibilityState === "visible"
+  );
+
+  // Track visibility
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const visible = document.visibilityState === "visible";
+      setIsVisible(visible);
+      console.log("Visibility changed:", visible ? "Visible" : "Hidden");
     };
 
-    const BACKEND_URL = resolveBackendUrl();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
 
-    const [events, setEvents] = useState([]);
-    const mousePos = useRef({ x: 0, y: 0 });
-    const eventsRef = useRef([]); // Ref to keep track of events without dependency issues
+  // Track mouse position
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isVisible) return;
+      mousePos.current = { x: e.clientX, y: e.clientY };
+    };
 
-    // Update ref whenever state changes
-    useEffect(() => {
-        eventsRef.current = events;
-    }, [events]);
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [isVisible]);
 
-    const [isVisible, setIsVisible] = useState(document.visibilityState === 'visible');
+  // Track clicks
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (!isVisible) return;
+      const newEvent = {
+        username: username || "unknown",
+        action: "mouse click",
+        page: currentPage,
+        timestamp: Date.now(),
+        x: e.clientX,
+        y: e.clientY,
+      };
+      setEvents((prev) => [...prev, newEvent]);
+    };
 
-    // Track visibility
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-            const visible = document.visibilityState === 'visible';
-            setIsVisible(visible);
-            console.log('Visibility changed:', visible ? 'Visible' : 'Hidden');
-        };
+    window.addEventListener("mousedown", handleClick);
+    return () => window.removeEventListener("mousedown", handleClick);
+  }, [username, currentPage, isVisible]);
 
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-    }, []);
+  // Interval: 5s sampling (Mouse Idle/Position check)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!isVisible) return;
+      const newEvent = {
+        username: username || "unknown",
+        action: "mouse idle",
+        page: currentPage,
+        timestamp: Date.now(),
+        x: mousePos.current.x,
+        y: mousePos.current.y,
+      };
+      setEvents((prev) => [...prev, newEvent]);
+    }, 5000);
 
-    // Track mouse position
-    useEffect(() => {
-        const handleMouseMove = (e) => {
-            if (!isVisible) return;
-            mousePos.current = { x: e.clientX, y: e.clientY };
-        };
+    return () => clearInterval(interval);
+  }, [username, currentPage, isVisible]);
 
-        window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, [isVisible]);
+  // Interval: 30s flush to backend
+  useEffect(() => {
+    const flushInterval = setInterval(async () => {
+      if (!isVisible) return;
+      if (eventsRef.current.length === 0) return;
 
-    // Track clicks
-    useEffect(() => {
-        const handleClick = (e) => {
-            if (!isVisible) return;
-            const newEvent = {
-                username: username || 'unknown',
-                action: 'mouse click',
-                page: currentPage,
-                timestamp: Date.now(),
-                x: e.clientX,
-                y: e.clientY
-            };
-            setEvents(prev => [...prev, newEvent]);
-        };
+      const payload = [...eventsRef.current];
+      // Clear buffer immediately to avoid duplicates if request takes time
+      setEvents([]);
 
-        window.addEventListener('mousedown', handleClick);
-        return () => window.removeEventListener('mousedown', handleClick);
-    }, [username, currentPage, isVisible]);
+      try {
+        await fetch(`${BACKEND_URL}/collect`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      } catch (error) {
+        console.error("Failed to send mouse events:", error);
+        // Optional: Put events back if failed? For now, we drop them to avoid memory leaks.
+      }
+    }, 30000);
 
-    // Interval: 5s sampling (Mouse Idle/Position check)
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (!isVisible) return;
-            const newEvent = {
-                username: username || 'unknown',
-                action: 'mouse idle',
-                page: currentPage,
-                timestamp: Date.now(),
-                x: mousePos.current.x,
-                y: mousePos.current.y
-            };
-            setEvents(prev => [...prev, newEvent]);
-        }, 5000);
+    return () => clearInterval(flushInterval);
+  }, [isVisible, BACKEND_URL]);
 
-        return () => clearInterval(interval);
-    }, [username, currentPage, isVisible]);
-
-    // Interval: 30s flush to backend
-    useEffect(() => {
-        const flushInterval = setInterval(async () => {
-            if (!isVisible) return;
-            if (eventsRef.current.length === 0) return;
-
-            const payload = [...eventsRef.current];
-            // Clear buffer immediately to avoid duplicates if request takes time
-            setEvents([]);
-
-            try {
-                await fetch(`${BACKEND_URL}/collect`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload),
-                });
-            } catch (error) {
-                console.error('Failed to send mouse events:', error);
-                // Optional: Put events back if failed? For now, we drop them to avoid memory leaks.
-            }
-        }, 30000);
-
-        return () => clearInterval(flushInterval);
-    }, [isVisible, BACKEND_URL]);
-
-    return {};
+  return {};
 };
 
 export default useMouseTracking;

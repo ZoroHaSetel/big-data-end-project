@@ -84,9 +84,9 @@ services:
     environment:
       # Provide your ngrok authtoken via environment or .env file:
       # NGROK_AUTHTOKEN=your_token_here
-      NGROK_AUTHTOKEN: token
+      NGROK_AUTHTOKEN: 2rZVCRS5Ry7lG3RegmLGxjk0YpR_fAXUDmUFC84JGcGQbWXr
     # create an HTTP tunnel pointing to the backend container on port 5000
-    command: ["http", "http://backend:5000", "--log", "stdout"]
+    command: [ "http", "http://backend:5000", "--log", "stdout" ]
     # expose ngrok local web UI for inspection (optional)
     ports:
       - "4040:4040"

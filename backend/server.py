@@ -10,7 +10,8 @@ import random
 
 
 app = Flask(__name__)
-
+# Enable CORS - allow all origins for development
+CORS(app)
 
 client = Minio(
     endpoint=os.getenv("MINIO_ENDPOINT", "localhost:9000"),

@@ -6,6 +6,10 @@ be.start :
 	docker compose up -d
 be.stop :
 	docker compose down
+be.build :
+	docker compose down
+	docker compose build backend
+	docker compose up -d
 
 fe.dev :
 	cd frontend && npm run dev
@@ -16,16 +20,25 @@ fake-ingest :
 	  -d '{"date":"2025/11/28","count":200}'
 
 # Dynamic spark-process with default values
-# Usage: make spark-process YEAR=2025 MONTH=12 DAY=06 USER=john
+# Usage: make spark-process YEAR=2025 MONTH=12 DAY=06 USERNAME=john
 YEAR ?= 2025
-MONTH ?= 11
-DAY ?= 28
-USER ?= ash
+MONTH ?= 12
+DAY ?= 08
+USERNAME ?= ash
 
 spark-report :
 	docker exec \
 		-e S3_YEAR=$(YEAR) \
 		-e S3_MONTH=$(MONTH) \
 		-e S3_DAY=$(DAY) \
-		-e TARGET_USERNAME=$(USER) \
+		-e TARGET_USERNAME=$(USERNAME) \
 		spark-master python3 /app/pysparkminioi.py
+
+spark-heatmap :
+	docker exec \
+		-e S3_YEAR=$(YEAR) \
+		-e S3_MONTH=$(MONTH) \
+		-e S3_DAY=$(DAY) \
+		-e TARGET_USERNAME=$(USERNAME) \
+		spark-master python3 /app/heatmap_report.py
+
