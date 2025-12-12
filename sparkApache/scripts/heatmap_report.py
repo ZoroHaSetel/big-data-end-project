@@ -12,8 +12,9 @@ def main():
     # 1. Create SparkSession with MinIO/S3A configuration
     spark = (
         SparkSession.builder.appName("MinIO-Heatmap-Report")
-        .master("local[*]")
-        .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000")
+        # .master("local[*]")
+        .master("spark://spark-master:7077")
+        .config("spark.hadoop.fs.s3a.endpoint", "http://minio1:9000")
         .config("spark.hadoop.fs.s3a.access.key", "admin")
         .config("spark.hadoop.fs.s3a.secret.key", "password123")
         .config("spark.hadoop.fs.s3a.path.style.access", "true")

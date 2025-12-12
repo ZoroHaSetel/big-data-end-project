@@ -1,8 +1,7 @@
 services:
-  minio:
+  minio1:
     image: minio/minio
-    command: server /data --console-address ":9001"
-    container_name: minio
+    container_name: minio1
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -10,20 +9,37 @@ services:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: password123
     volumes:
-      - minio_data:/data
+      - minio1_data:/data
+    command: server http://minio1/data http://minio2/data --console-address ":9001"
+    hostname: minio1
+
+  minio2:
+    image: minio/minio
+    container_name: minio2
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+    volumes:
+      - minio2_data:/data
+    command: server http://minio1/data http://minio2/data --console-address ":9001"
+    hostname: minio2
 
   backend:
     build: ./backend
     ports:
       - "5000:5000"
     environment:
-      MINIO_ENDPOINT: minio:9000
+      MINIO_ENDPOINT: minio1:9000
       # Allow CORS origins (can be a comma-separated list or '*').
       # In Codespaces the frontend may be served from a different forwarded origin;
       # set to '*' for quick testing or set specific origin(s) in production.
       # CORS_ORIGINS: '*'
     depends_on:
-      - minio
+      - minio1
+      - minio2
 
   # namenode:
   #   image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
@@ -93,6 +109,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  minio_data:
+  minio1_data:
+  minio2_data:
     # hadoop_namenode:
     # hadoop_datanode:
